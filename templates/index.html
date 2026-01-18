@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OSINT Toolkit - Plateforme d'outils de recherche en sources ouvertes">
+    <title>OSINT Toolkit</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+    
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        /* ==================== VARIABLES CSS ==================== */
+        :root {
+            /* Light mode - Professionnel */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #60a5fa;
+            --accent-light: #dbeafe;
+            --success: #22c55e;
+            --success-light: #dcfce7;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --error: #ef4444;
+            --error-light: #fee2e2;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.2s ease;
+        }
+
+        /* ==================== RESET & BASE ==================== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ==================== LOGIN MODAL ==================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: var(--shadow-lg);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .form-error {
+            color: var(--error);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .form-error.visible {
+            display: block;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-secondary);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            background: transparent;
+            border-radius: var(--radius-sm);
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* ==================== LAYOUT ==================== */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .app-container.visible {
+            display: block;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-logo {
+            font-size: 1.75rem;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .lang-switch {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .lang-btn {
+            padding: 0.5rem 0.75rem;
+            background: none;
+            border: none;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
+        }
+
+        .lang-btn.active {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* ==================== TOOLS GRID ==================== */
+        .tools-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .tool-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tool-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .tool-card.active {
+            border-color: var(--accent-primary);
+            background: var(--accent-light);
+        }
+
+        .tool-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .tool-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .tool-info {
+            flex: 1;
+        }
+
+        .tool-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .tool-description {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ==================== SEARCH SECTION ==================== */
+        .search-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .search-section.visible {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .search-tool-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            padding-right: 2.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            display: none;
+        }
+
+        .search-clear.visible {
+            display: block;
+        }
+
+        .search-btn {
+            padding: 0.875rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Options avancées */
+        .options-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.5rem 0;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .options-toggle:hover {
+            color: var(--accent-primary);
+        }
+
+        .options-toggle svg {
+            transition: transform 0.2s ease;
+        }
+
+        .options-toggle.open svg {
+            transform: rotate(180deg);
+        }
+
+        .options-panel {
+            display: none;
+            padding: 1rem;
+            margin-top: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+        }
+
+        .options-panel.visible {
+            display: block;
+        }
+
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .option-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .option-checkbox {
+            width: 1.125rem;
+            height: 1.125rem;
+            accent-color: var(--accent-primary);
+        }
+
+        .option-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            background: var(--bg-secondary);
+        }
+
+        /* ==================== PROGRESS ==================== */
+        .progress-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .progress-section.visible {
+            display: block;
+        }
+
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .progress-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .progress-spinner {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar-container {
+            background: var(--bg-tertiary);
+            border-radius: 9999px;
+            height: 0.5rem;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-primary);
+            border-radius: 9999px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-status {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-log {
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Consolas', monospace;
+            font-size: 0.8125rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .log-entry {
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+        }
+
+        .log-message {
+            color: var(--text-secondary);
+        }
+
+        .log-success {
+            color: var(--success);
+        }
+
+        /* ==================== RESULTS ==================== */
+        .results-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .results-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .results-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .results-count {
+            background: var(--success-light);
+            color: var(--success);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+
+        .results-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-export {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-export:hover {
+            background: var(--border-color);
+        }
+
+        /* Results Table */
+        .results-table-wrapper {
+            overflow-x: auto;
+            margin: 0 -1.5rem;
+            padding: 0 1.5rem;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .results-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .results-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        .results-table tr:hover td {
+            background: var(--bg-tertiary);
+        }
+
+        .results-table a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        .results-table a:hover {
+            text-decoration: underline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .badge-error {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
+        .badge-info {
+            background: var(--accent-light);
+            color: var(--accent-primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1rem;
+        }
+
+        /* ==================== HISTORY ==================== */
+        .history-section {
+            margin-top: 2rem;
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== LOGIN MODAL ==================== -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-logo">🔍</div>
+                <h1 class="modal-title">OSINT Toolkit</h1>
+                <p class="modal-subtitle" data-i18n="login.subtitle">Plateforme d'outils de recherche en sources ouvertes</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="password" data-i18n="login.password">Mot de passe</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="form-input" 
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                    >
+                    <p id="loginError" class="form-error" data-i18n="login.error">Mot de passe incorrect</p>
+                </div>
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <span data-i18n="login.submit">Se connecter</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN APP ==================== -->
+    <div id="appContainer" class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-brand">
+                    <span class="header-logo">🔍</span>
+                    <h1 class="header-title">OSINT Toolkit</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="lang-switch">
+                        <button class="lang-btn active" data-lang="fr">FR</button>
+                        <button class="lang-btn" data-lang="en">EN</button>
+                    </div>
+                    <button class="btn btn-secondary" id="logoutBtn" title="Déconnexion">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span data-i18n="header.logout">Déconnexion</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Tools Grid -->
+            <section class="tools-section">
+                <h2 class="section-title" data-i18n="tools.title">Outils disponibles</h2>
+                <div class="tools-grid" id="toolsGrid">
+                    <!-- Tools loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Search Section -->
+            <section class="search-section" id="searchSection">
+                <div class="search-header">
+                    <h3 class="search-tool-name" id="searchToolName">
+                        <span id="searchToolIcon"></span>
+                        <span id="searchToolLabel"></span>
+                    </h3>
+                    <button class="btn btn-icon" id="closeSearch" title="Fermer">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <form class="search-form" id="searchForm">
+                    <div class="search-input-wrapper">
+                        <input 
+                            type="text" 
+                            class="search-input" 
+                            id="searchInput"
+                            placeholder=""
+                            autocomplete="off"
+                            required
+                        >
+                        <button type="button" class="search-clear" id="clearSearch">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="15" y1="9" x2="9" y2="15"/>
+                                <line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary search-btn" id="searchBtn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <span data-i18n="search.submit">Rechercher</span>
+                    </button>
+                </form>
+                
+                <!-- Options Panel -->
+                <button class="options-toggle" id="optionsToggle">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                    <span data-i18n="search.options">Paramètres avancés</span>
+                </button>
+                <div class="options-panel" id="optionsPanel">
+                    <!-- Options loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Progress Section -->
+            <section class="progress-section" id="progressSection">
+                <div class="progress-header">
+                    <div class="progress-title">
+                        <div class="progress-spinner"></div>
+                        <span data-i18n="progress.title">Recherche en cours...</span>
+                    </div>
+                    <button class="btn btn-secondary" id="cancelSearch" data-i18n="progress.cancel">Annuler</button>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p class="progress-status" id="progressStatus"></p>
+                <div class="progress-log" id="progressLog"></div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection">
+                <div class="results-header">
+                    <div>
+                        <h3 class="results-title" data-i18n="results.title">Résultats</h3>
+                        <div class="results-meta">
+                            <span class="results-count" id="resultsCount">0</span>
+                            <span id="resultsMeta"></span>
+                        </div>
+                    </div>
+                    <div class="results-actions">
+                        <button class="btn-export" id="exportJson">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            JSON
+                        </button>
+                        <button class="btn-export" id="exportCsv">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="results-table-wrapper">
+                    <div id="resultsContent">
+                        <!-- Results loaded dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section class="history-section" id="historySection">
+                <div class="history-header">
+                    <h3 class="section-title" data-i18n="history.title">Historique récent</h3>
+                    <button class="btn btn-secondary" id="clearHistory" data-i18n="history.clear">Effacer</button>
+                </div>
+                <div class="history-list" id="historyList">
+                    <!-- History loaded from localStorage -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // ==================== TRANSLATIONS ====================
+        const translations = {
+            fr: {
+                'login.subtitle': 'Plateforme d\'outils de recherche en sources ouvertes',
+                'login.password': 'Mot de passe',
+                'login.submit': 'Se connecter',
+                'login.error': 'Mot de passe incorrect',
+                'header.logout': 'Déconnexion',
+                'tools.title': 'Outils disponibles',
+                'search.submit': 'Rechercher',
+                'search.options': 'Paramètres avancés',
+                'progress.title': 'Recherche en cours...',
+                'progress.cancel': 'Annuler',
+                'results.title': 'Résultats',
+                'results.found': 'trouvé(s)',
+                'results.empty': 'Aucun résultat trouvé',
+                'history.title': 'Historique récent',
+                'history.clear': 'Effacer',
+                'history.empty': 'Aucun historique',
+                'error.connection': 'Erreur de connexion',
+                'error.timeout': 'Délai d\'attente dépassé',
+                'status.connecting': 'Connexion...',
+                'status.searching': 'Recherche en cours...',
+                'status.complete': 'Recherche terminée'
+            },
+            en: {
+                'login.subtitle': 'Open Source Intelligence Tools Platform',
+                'login.password': 'Password',
+                'login.submit': 'Sign in',
+                'login.error': 'Incorrect password',
+                'header.logout': 'Logout',
+                'tools.title': 'Available tools',
+                'search.submit': 'Search',
+                'search.options': 'Advanced settings',
+                'progress.title': 'Searching...',
+                'progress.cancel': 'Cancel',
+                'results.title': 'Results',
+                'results.found': 'found',
+                'results.empty': 'No results found',
+                'history.title': 'Recent history',
+                'history.clear': 'Clear',
+                'history.empty': 'No history',
+                'error.connection': 'Connection error',
+                'error.timeout': 'Request timeout',
+                'status.connecting': 'Connecting...',
+                'status.searching': 'Searching...',
+                'status.complete': 'Search complete'
+            }
+        };
+
+        // ==================== APP STATE ====================
+        const state = {
+            lang: localStorage.getItem('osint_lang') || 'fr',
+            authenticated: false,
+            currentTool: null,
+            tools: {},
+            socket: null,
+            searchInProgress: false,
+            currentResults: null,
+            history: JSON.parse(localStorage.getItem('osint_history') || '[]')
+        };
+
+        // Tool icons mapping
+        const toolIcons = {
+            'sherlock': '👤',
+            'holehe': '📧',
+            'email_validator': '✉️',
+            'whois': '🌐',
+            'dns': '🔗',
+            'phone': '📱',
+            'ip': '🖥️',
+            'wayback': '📜'
+        };
+
+        // ==================== DOM ELEMENTS ====================
+        const $ = (sel) => document.querySelector(sel);
+        const $$ = (sel) => document.querySelectorAll(sel);
+
+        const elements = {
+            loginModal: $('#loginModal'),
+            loginForm: $('#loginForm'),
+            loginError: $('#loginError'),
+            loginBtn: $('#loginBtn'),
+            password: $('#password'),
+            appContainer: $('#appContainer'),
+            logoutBtn: $('#logoutBtn'),
+            toolsGrid: $('#toolsGrid'),
+            searchSection: $('#searchSection'),
+            searchForm: $('#searchForm'),
+            searchInput: $('#searchInput'),
+            searchBtn: $('#searchBtn'),
+            searchToolName: $('#searchToolName'),
+            searchToolIcon: $('#searchToolIcon'),
+            searchToolLabel: $('#searchToolLabel'),
+            closeSearch: $('#closeSearch'),
+            clearSearch: $('#clearSearch'),
+            optionsToggle: $('#optionsToggle'),
+            optionsPanel: $('#optionsPanel'),
+            progressSection: $('#progressSection'),
+            progressBar: $('#progressBar'),
+            progressStatus: $('#progressStatus'),
+            progressLog: $('#progressLog'),
+            cancelSearch: $('#cancelSearch'),
+            resultsSection: $('#resultsSection'),
+            resultsCount: $('#resultsCount'),
+            resultsMeta: $('#resultsMeta'),
+            resultsContent: $('#resultsContent'),
+            exportJson: $('#exportJson'),
+            exportCsv: $('#exportCsv'),
+            historySection: $('#historySection'),
+            historyList: $('#historyList'),
+            clearHistory: $('#clearHistory'),
+            langBtns: $$('.lang-btn')
+        };
+
+        // ==================== I18N ====================
+        function t(key) {
+            return translations[state.lang][key] || key;
+        }
+
+        function updateLanguage(lang) {
+            state.lang = lang;
+            localStorage.setItem('osint_lang', lang);
+            
+            // Update active button
+            elements.langBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+            
+            // Update all translatable elements
+            $$('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                el.textContent = t(key);
+            });
+            
+            // Re-render tools with new language
+            if (Object.keys(state.tools).length > 0) {
+                renderTools();
+            }
+            
+            // Update current tool placeholder if visible
+            if (state.currentTool) {
+                const tool = state.tools[state.currentTool];
+                if (tool) {
+                    elements.searchInput.placeholder = tool.input_placeholder[lang];
+                    elements.searchToolLabel.textContent = tool.name[lang];
+                }
+            }
+        }
+
+        // ==================== AUTHENTICATION ====================
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/check');
+                const data = await response.json();
+                state.authenticated = data.authenticated;
+                
+                if (state.authenticated) {
+                    showApp();
+                    initWebSocket();
+                } else {
+                    showLogin();
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                showLogin();
+            }
+        }
+
+        async function login(password) {
+            elements.loginBtn.disabled = true;
+            elements.loginError.classList.remove('visible');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    state.authenticated = true;
+                    showApp();
+                    initWebSocket();
+                    loadTools();
+                } else {
+                    elements.loginError.classList.add('visible');
+                    elements.password.focus();
+                }
+            } catch (error) {
+                console.error('Login failed:', error);
+                elements.loginError.textContent = t('error.connection');
+                elements.loginError.classList.add('visible');
+            } finally {
+                elements.loginBtn.disabled = false;
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            
+            state.authenticated = false;
+            if (state.socket) {
+                state.socket.disconnect();
+                state.socket = null;
+            }
+            showLogin();
+        }
+
+        function showLogin() {
+            elements.loginModal.classList.remove('hidden');
+            elements.appContainer.classList.remove('visible');
+            elements.password.value = '';
+            elements.password.focus();
+        }
+
+        function showApp() {
+            elements.loginModal.classList.add('hidden');
+            elements.appContainer.classList.add('visible');
+            loadTools();
+            renderHistory();
+        }
+
+        // ==================== WEBSOCKET ====================
+        function initWebSocket() {
+            if (state.socket) {
+                state.socket.disconnect();
+            }
+            
+            state.socket = io({
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
+            });
+            
+            state.socket.on('connect', () => {
+                console.log('WebSocket connected');
+            });
+            
+            state.socket.on('disconnect', () => {
+                console.log('WebSocket disconnected');
+            });
+            
+            state.socket.on('connected', (data) => {
+                console.log('Session:', data.sid);
+            });
+            
+            state.socket.on('started', (data) => {
+                showProgress();
+                addLogEntry(t('status.searching'));
+            });
+            
+            state.socket.on('progress', (data) => {
+                updateProgress(data.progress, data.message);
+                if (data.result) {
+                    addLogEntry(`✅ ${data.message}`, 'success');
+                }
+            });
+            
+            state.socket.on('completed', (data) => {
+                state.searchInProgress = false;
+                hideProgress();
+                displayResults(data.tool, data.result);
+                addToHistory(data.tool, elements.searchInput.value, data.result);
+            });
+            
+            state.socket.on('error', (data) => {
+                state.searchInProgress = false;
+                hideProgress();
+                showError(data.message);
+            });
+        }
+
+        // ==================== TOOLS ====================
+        async function loadTools() {
+            try {
+                const response = await fetch('/api/tools');
+                const data = await response.json();
+                
+                if (data.success) {
+                    state.tools = data.tools;
+                    renderTools();
+                }
+            } catch (error) {
+                console.error('Failed to load tools:', error);
+            }
+        }
+
+        function renderTools() {
+            const lang = state.lang;
+            elements.toolsGrid.innerHTML = '';
+            
+            Object.values(state.tools).forEach(tool => {
+                const card = document.createElement('div');
+                card.className = 'tool-card';
+                card.dataset.tool = tool.id;
+                
+                card.innerHTML = `
+                    <div class="tool-header">
+                        <span class="tool-icon">${toolIcons[tool.id] || '🔧'}</span>
+                        <div class="tool-info">
+                            <h4 class="tool-name">${tool.name[lang]}</h4>
+                            <p class="tool-description">${tool.description[lang]}</p>
+                        </div>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => selectTool(tool.id));
+                elements.toolsGrid.appendChild(card);
+            });
+        }
+
+        function selectTool(toolId) {
+            // Update active state
+            $$('.tool-card').forEach(card => {
+                card.classList.toggle('active', card.dataset.tool === toolId);
+            });
+            
+            state.currentTool = toolId;
+            const tool = state.tools[toolId];
+            const lang = state.lang;
+            
+            // Update search section
+            elements.searchToolIcon.textContent = toolIcons[toolId] || '🔧';
+            elements.searchToolLabel.textContent = tool.name[lang];
+            elements.searchInput.placeholder = tool.input_placeholder[lang];
+            elements.searchInput.value = '';
+            
+            // Render options
+            renderOptions(tool.options);
+            
+            // Show search section
+            elements.searchSection.classList.add('visible');
+            elements.searchInput.focus();
+            
+            // Hide results
+            elements.resultsSection.classList.remove('visible');
+            elements.progressSection.classList.remove('visible');
+        }
+        function renderOptions(options) {
+            const lang = state.lang;
+            elements.optionsPanel.innerHTML = '';
+            
+            if (!options || options.length === 0) {
+                elements.optionsToggle.style.display = 'none';
+                return;
+            }
+            
+            elements.optionsToggle.style.display = 'flex';
+            
+            options.forEach(opt => {
+                const group = document.createElement('div');
+                group.className = 'option-group';
+                
+                if (opt.type === 'checkbox') {
+                    group.innerHTML = `
+                        <input type="checkbox" class="option-checkbox" 
+                            id="opt_${opt.id}" 
+                            data-option="${opt.id}"
+                            ${opt.default ? 'checked' : ''}>
+                        <label class="option-label" for="opt_${opt.id}">${opt.label[lang]}</label>
+                    `;
+                } else if (opt.type === 'select') {
+                    group.innerHTML = `
+                        <label class="option-label" for="opt_${opt.id}">${opt.label[lang]}</label>
+                        <select class="option-select" id="opt_${opt.id}" data-option="${opt.id}">
+                            ${opt.choices.map(c => `<option value="${c}" ${c === opt.default ? 'selected' : ''}>${c}</option>`).join('')}
+                        </select>
+                    `;
+                } else if (opt.type === 'number') {
+                    group.innerHTML = `
+                        <label class="option-label" for="opt_${opt.id}">${opt.label[lang]}</label>
+                        <input type="number" class="option-select" 
+                            id="opt_${opt.id}" 
+                            data-option="${opt.id}"
+                            value="${opt.default}"
+                            min="${opt.min || 1}"
+                            max="${opt.max || 100}"
+                            style="width: 80px;">
+                    `;
+                } else if (opt.type === 'multiselect') {
+                    const checkboxes = opt.choices.map(c => `
+                        <label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+                            <input type="checkbox" data-option="${opt.id}" data-value="${c}" 
+                                ${opt.default.includes(c) ? 'checked' : ''}>
+                            ${c}
+                        </label>
+                    `).join('');
+                    group.innerHTML = `
+                        <label class="option-label">${opt.label[lang]}</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">${checkboxes}</div>
+                    `;
+                }
+                
+                elements.optionsPanel.appendChild(group);
+            });
+        }
+        
+        function getOptions() {
+            const options = {};
+            
+            // Checkboxes simples
+            elements.optionsPanel.querySelectorAll('.option-checkbox').forEach(el => {
+                options[el.dataset.option] = el.checked;
+            });
+            
+            // Selects
+            elements.optionsPanel.querySelectorAll('.option-select').forEach(el => {
+                const value = el.value;
+                options[el.dataset.option] = el.type === 'number' ? parseInt(value) : value;
+            });
+            
+            // Multiselect (checkboxes avec data-value)
+            const multiselects = {};
+            elements.optionsPanel.querySelectorAll('[data-value]').forEach(el => {
+                const optId = el.dataset.option;
+                if (!multiselects[optId]) multiselects[optId] = [];
+                if (el.checked) {
+                    multiselects[optId].push(el.dataset.value);
+                }
+            });
+            Object.assign(options, multiselects);
+            
+            return options;
+        }
+
+        // ==================== SEARCH ====================
+        function runSearch() {
+            if (state.searchInProgress || !state.currentTool) return;
+            
+            const value = elements.searchInput.value.trim();
+            if (!value) {
+                elements.searchInput.focus();
+                return;
+            }
+            
+            state.searchInProgress = true;
+            const options = getOptions();
+            
+            // Use WebSocket if available
+            if (state.socket && state.socket.connected) {
+                state.socket.emit('run_tool', {
+                    tool: state.currentTool,
+                    value: value,
+                    options: options
+                });
+            } else {
+                // Fallback to REST API
+                runSearchSync(state.currentTool, value, options);
+            }
+            
+            showProgress();
+            elements.progressLog.innerHTML = '';
+            addLogEntry(t('status.connecting'));
+        }
+
+        async function runSearchSync(tool, value, options) {
+            try {
+                updateProgress(10, t('status.searching'));
+                
+                const response = await fetch(`/api/run/${tool}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ value, options })
+                });
+                
+                updateProgress(90, t('status.searching'));
+                
+                const result = await response.json();
+                
+                state.searchInProgress = false;
+                hideProgress();
+                displayResults(tool, result);
+                addToHistory(tool, value, result);
+                
+            } catch (error) {
+                state.searchInProgress = false;
+                hideProgress();
+                showError(error.message);
+            }
+        }
+
+        function cancelSearch() {
+            state.searchInProgress = false;
+            hideProgress();
+            // Note: WebSocket searches can't be easily cancelled server-side
+            // This just hides the UI
+        }
+
+        // ==================== PROGRESS ====================
+        function showProgress() {
+            elements.progressSection.classList.add('visible');
+            elements.resultsSection.classList.remove('visible');
+            elements.searchBtn.disabled = true;
+            elements.progressBar.style.width = '0%';
+        }
+
+        function hideProgress() {
+            elements.progressSection.classList.remove('visible');
+            elements.searchBtn.disabled = false;
+        }
+
+        function updateProgress(percent, message) {
+            elements.progressBar.style.width = `${percent}%`;
+            elements.progressStatus.textContent = message || '';
+        }
+
+        function addLogEntry(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span class="log-message ${type === 'success' ? 'log-success' : ''}">${message}</span>
+            `;
+            elements.progressLog.appendChild(entry);
+            elements.progressLog.scrollTop = elements.progressLog.scrollHeight;
+        }
+
+        // ==================== RESULTS ====================
+        function displayResults(tool, result) {
+            state.currentResults = result;
+            elements.resultsSection.classList.add('visible');
+            
+            if (!result.success) {
+                showError(result.error);
+                return;
+            }
+            
+            // ==================== RESULTS ====================
+        function displayResults(tool, result) {
+            state.currentResults = result;
+            elements.resultsSection.classList.add('visible');
+            
+            if (!result.success) {
+                showError(result.error);
+                return;
+            }
+            
+            // Render based on tool type
+            const renderers = {
+                'sherlock': renderSherlockResults,
+                'holehe': renderHoleheResults,
+                'email_validator': renderEmailValidatorResults,
+                'whois': renderWhoisResults,
+                'dns': renderDnsResults,
+                'phone': renderPhoneResults,
+                'ip': renderIpResults,
+                'wayback': renderWaybackResults
+            };
+            
+            const renderer = renderers[tool];
+            if (renderer) {
+                renderer(result);
+            } else {
+                renderGenericResults(result);
+            }
+        }
+
+        function renderSherlockResults(result) {
+            const found = result.found || [];
+            elements.resultsCount.textContent = found.length;
+            elements.resultsMeta.textContent = `${t('results.found')} - @${result.username}`;
+            
+            if (found.length === 0) {
+                elements.resultsContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p class="empty-state-text">${t('results.empty')}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            elements.resultsContent.innerHTML = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Site</th>
+                            <th>URL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${found.map((item, i) => `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td><strong>${item.site}</strong></td>
+                                <td><a href="${item.url}" target="_blank" rel="noopener">${item.url}</a></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderHoleheResults(result) {
+            const found = result.found || [];
+            elements.resultsCount.textContent = found.length;
+            elements.resultsMeta.textContent = `${t('results.found')} - ${result.email}`;
+            
+            if (found.length === 0) {
+                elements.resultsContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📧</div>
+                        <p class="empty-state-text">${t('results.empty')}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            elements.resultsContent.innerHTML = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Service</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${found.map((item, i) => `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td><strong>${item.site}</strong></td>
+                                <td><span class="badge badge-success">Enregistré</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderEmailValidatorResults(result) {
+            const isValid = result.valid;
+            elements.resultsCount.textContent = isValid ? '✓' : '✗';
+            elements.resultsMeta.textContent = result.email;
+            
+            elements.resultsContent.innerHTML = `
+                <table class="results-table">
+                    <tbody>
+                        <tr>
+                            <td><strong>Email</strong></td>
+                            <td>${result.email || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Valide</strong></td>
+                            <td>
+                                <span class="badge ${isValid ? 'badge-success' : 'badge-error'}">
+                                    ${isValid ? 'Oui' : 'Non'}
+                                </span>
+                            </td>
+                        </tr>
+                        ${result.local_part ? `
+                        <tr>
+                            <td><strong>Partie locale</strong></td>
+                            <td>${result.local_part}</td>
+                        </tr>
+                        ` : ''}
+                        ${result.domain ? `
+                        <tr>
+                            <td><strong>Domaine</strong></td>
+                            <td>${result.domain}</td>
+                        </tr>
+                        ` : ''}
+                        ${result.error ? `
+                        <tr>
+                            <td><strong>Erreur</strong></td>
+                            <td class="text-error">${result.error}</td>
+                        </tr>
+                        ` : ''}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderWhoisResults(result) {
+            elements.resultsCount.textContent = result.success ? '✓' : '✗';
+            elements.resultsMeta.textContent = result.domain;
+            
+            if (!result.success) {
+                elements.resultsContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p class="empty-state-text">${result.error}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const reg = result.registrant || {};
+            
+            elements.resultsContent.innerHTML = `
+                <table class="results-table">
+                    <tbody>
+                        <tr>
+                            <td><strong>Domaine</strong></td>
+                            <td>${result.domain}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Registrar</strong></td>
+                            <td>${result.registrar || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Date de création</strong></td>
+                            <td>${result.creation_date || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Date d'expiration</strong></td>
+                            <td>${result.expiration_date || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dernière mise à jour</strong></td>
+                            <td>${result.updated_date || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Serveurs DNS</strong></td>
+                            <td>${(result.name_servers || []).join('<br>') || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Statut</strong></td>
+                            <td>${(result.status || []).map(s => `<span class="badge badge-info">${s}</span>`).join(' ') || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Organisation</strong></td>
+                            <td>${reg.org || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pays</strong></td>
+                            <td>${reg.country || '-'}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderDnsResults(result) {
+            const records = result.records || {};
+            const totalRecords = Object.values(records).flat().length;
+            elements.resultsCount.textContent = totalRecords;
+            elements.resultsMeta.textContent = result.domain;
+            
+            let html = '<table class="results-table"><tbody>';
+            
+            Object.entries(records).forEach(([type, values]) => {
+                if (values.length > 0) {
+                    html += `
+                        <tr>
+                            <td><strong>${type}</strong></td>
+                            <td>
+                                ${type === 'MX' 
+                                    ? values.map(v => `${v.priority} ${v.host}`).join('<br>')
+                                    : values.map(v => typeof v === 'object' ? JSON.stringify(v) : v).join('<br>')
+                                }
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            // Security records
+            if (result.security) {
+                const sec = result.security;
+                html += `
+                    <tr>
+                        <td><strong>SPF</strong></td>
+                        <td>
+                            <span class="badge ${sec.spf ? 'badge-success' : 'badge-warning'}">
+                                ${sec.spf ? 'Configuré' : 'Non trouvé'}
+                            </span>
+                            ${sec.spf ? `<br><small>${sec.spf}</small>` : ''}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>DMARC</strong></td>
+                        <td>
+                            <span class="badge ${sec.dmarc ? 'badge-success' : 'badge-warning'}">
+                                ${sec.dmarc ? 'Configuré' : 'Non trouvé'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            html += '</tbody></table>';
+            
+            if (result.errors && result.errors.length > 0) {
+                html += `<p style="color: var(--warning); margin-top: 1rem; font-size: 0.875rem;">
+                    ⚠️ ${result.errors.join(', ')}
+                </p>`;
+            }
+            
+            elements.resultsContent.innerHTML = html;
+        }
+
+        function renderPhoneResults(result) {
+            elements.resultsCount.textContent = result.valid ? '✓' : '✗';
+            elements.resultsMeta.textContent = result.input;
+            
+            if (!result.valid && result.error) {
+                elements.resultsContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📱</div>
+                        <p class="empty-state-text">${result.error}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const formats = result.formats || {};
+            
+            elements.resultsContent.innerHTML = `
+                <table class="results-table">
+                    <tbody>
+                        <tr>
+                            <td><strong>Numéro saisi</strong></td>
+                            <td>${result.input}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Valide</strong></td>
+                            <td>
+                                <span class="badge ${result.valid ? 'badge-success' : 'badge-error'}">
+                                    ${result.valid ? 'Oui' : 'Non'}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pays</strong></td>
+                            <td>${result.region || '-'} (+${result.country_code || '-'})</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Type</strong></td>
+                            <td><span class="badge badge-info">${result.type || '-'}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Opérateur</strong></td>
+                            <td>${result.carrier || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Localisation</strong></td>
+                            <td>${result.location || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Format E164</strong></td>
+                            <td><code>${formats.E164 || '-'}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Format international</strong></td>
+                            <td><code>${formats.international || '-'}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Format national</strong></td>
+                            <td><code>${formats.national || '-'}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fuseaux horaires</strong></td>
+                            <td>${(result.timezones || []).join(', ') || '-'}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderIpResults(result) {
+            elements.resultsCount.textContent = result.success ? '✓' : '✗';
+            elements.resultsMeta.textContent = result.ip;
+            
+            if (result.is_private) {
+                elements.resultsContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🏠</div>
+                        <p class="empty-state-text">${result.error || 'Adresse IP privée'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            if (!result.success) {
+                elements.resultsContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p class="empty-state-text">${result.error}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const asn = result.asn || {};
+            const net = result.network || {};
+            
+            elements.resultsContent.innerHTML = `
+                <table class="results-table">
+                    <tbody>
+                        <tr>
+                            <td><strong>Adresse IP</strong></td>
+                            <td>${result.ip}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ASN</strong></td>
+                            <td>AS${asn.number || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description ASN</strong></td>
+                            <td>${asn.description || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pays</strong></td>
+                            <td>${asn.country || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Registre</strong></td>
+                            <td><span class="badge badge-info">${asn.registry || '-'}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>CIDR</strong></td>
+                            <td>${asn.cidr || net.cidr || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Réseau</strong></td>
+                            <td>${net.name || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Organisation</strong></td>
+                            <td>${result.organization || '-'}</td>
+                        </tr>
+                        ${result.abuse_emails && result.abuse_emails.length > 0 ? `
+                        <tr>
+                            <td><strong>Contact abuse</strong></td>
+                            <td>${result.abuse_emails.join(', ')}</td>
+                        </tr>
+                        ` : ''}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderWaybackResults(result) {
+            elements.resultsCount.textContent = result.count || 0;
+            elements.resultsMeta.textContent = result.url;
+            
+            if (!result.archived) {
+                elements.resultsContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📜</div>
+                        <p class="empty-state-text">${result.message || t('results.empty')}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const snapshots = result.snapshots || [];
+            
+            let html = `
+                <div style="margin-bottom: 1rem;">
+                    <p><strong>Premier snapshot:</strong> ${result.oldest?.timestamp || '-'}</p>
+                    <p><strong>Dernier snapshot:</strong> ${result.newest?.timestamp || '-'}</p>
+                    ${result.newest?.archive_url ? `
+                        <p><a href="${result.newest.archive_url}" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top: 0.5rem;">
+                            Voir la dernière version →
+                        </a></p>
+                    ` : ''}
+                </div>
+            `;
+            
+            if (snapshots.length > 0) {
+                html += `
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Lien</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${snapshots.slice(0, 20).map((snap, i) => `
+                                <tr>
+                                    <td>${i + 1}</td>
+                                    <td>${snap.timestamp}</td>
+                                    <td><a href="${snap.archive_url}" target="_blank" rel="noopener">Voir →</a></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            elements.resultsContent.innerHTML = html;
+        }
+
+        function renderGenericResults(result) {
+            elements.resultsCount.textContent = '-';
+            elements.resultsMeta.textContent = '';
+            elements.resultsContent.innerHTML = `
+                <pre style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); overflow-x: auto; font-size: 0.8125rem;">
+${JSON.stringify(result, null, 2)}
+                </pre>
+            `;
+        }
+        
+        function showError(message) {
+            elements.resultsContent.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">❌</div>
+                    <p class="empty-state-text" style="color: var(--error);">${message}</p>
+                </div>
+            `;
+            elements.resultsCount.textContent = '!';
+            elements.resultsMeta.textContent = 'Erreur';
+        }
+
+        // ==================== EXPORT ====================
+        function exportJSON() {
+            if (!state.currentResults) return;
+            
+            const dataStr = JSON.stringify(state.currentResults, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            downloadBlob(blob, `osint_${state.currentTool}_${Date.now()}.json`);
+        }
+
+        function exportCSV() {
+            if (!state.currentResults) return;
+            
+            let csv = '';
+            const result = state.currentResults;
+            
+            // Convert based on tool type
+            if (result.found && Array.isArray(result.found)) {
+                const headers = Object.keys(result.found[0] || {});
+                csv = headers.join(',') + '\n';
+                csv += result.found.map(row => 
+                    headers.map(h => `"${(row[h] || '').toString().replace(/"/g, '""')}"`).join(',')
+                ).join('\n');
+            } else {
+                // Generic key-value export
+                csv = 'Key,Value\n';
+                Object.entries(result).forEach(([key, value]) => {
+                    if (typeof value !== 'object') {
+                        csv += `"${key}","${value}"\n`;
+                    }
+                });
+            }
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            downloadBlob(blob, `osint_${state.currentTool}_${Date.now()}.csv`);
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ==================== HISTORY ====================
+        function addToHistory(tool, value, result) {
+            const entry = {
+                id: Date.now(),
+                tool,
+                value,
+                timestamp: new Date().toISOString(),
+                success: result.success,
+                count: result.count || result.found?.length || 0
+            };
+            
+            // Add to beginning, limit to 20
+            state.history.unshift(entry);
+            state.history = state.history.slice(0, 20);
+            
+            localStorage.setItem('osint_history', JSON.stringify(state.history));
+            renderHistory();
+        }
+        
+        function renderHistory() {
+            if (state.history.length === 0) {
+                elements.historyList.innerHTML = `
+                    <p style="color: var(--text-muted); text-align: center; padding: 1rem;">
+                        ${t('history.empty')}
+                    </p>
+                `;
+                return;
+            }
+            
+            const lang = state.lang;
+            
+            elements.historyList.innerHTML = state.history.slice(0, 10).map(entry => {
+                const tool = state.tools[entry.tool];
+                const toolName = tool ? tool.name[lang] : entry.tool;
+                const time = new Date(entry.timestamp).toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US');
+                
+                return `
+                    <div class="history-item" data-tool="${entry.tool}" data-value="${entry.value}">
+                        <div class="history-item-info">
+                            <span>${toolIcons[entry.tool] || '🔧'}</span>
+                            <span class="history-item-tool">${toolName}</span>
+                            <span class="history-item-value">${entry.value}</span>
+                        </div>
+                        <span class="history-item-time">${time}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            // Add click handlers
+            elements.historyList.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const tool = item.dataset.tool;
+                    const value = item.dataset.value;
+                    selectTool(tool);
+                    elements.searchInput.value = value;
+                });
+            });
+        }
+
+        function clearHistory() {
+            state.history = [];
+            localStorage.removeItem('osint_history');
+            renderHistory();
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function initEventListeners() {
+            // Login
+            elements.loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                login(elements.password.value);
+            });
+            
+            // Logout
+            elements.logoutBtn.addEventListener('click', logout);
+            
+            // Language switch
+            elements.langBtns.forEach(btn => {
+                btn.addEventListener('click', () => updateLanguage(btn.dataset.lang));
+            });
+            
+            // Search
+            elements.searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                runSearch();
+            });
+            
+            // Close search
+            elements.closeSearch.addEventListener('click', () => {
+                elements.searchSection.classList.remove('visible');
+                state.currentTool = null;
+                $$('.tool-card').forEach(c => c.classList.remove('active'));
+            });
+            
+            // Clear input
+            elements.searchInput.addEventListener('input', () => {
+                elements.clearSearch.classList.toggle('visible', elements.searchInput.value.length > 0);
+            });
+            
+            elements.clearSearch.addEventListener('click', () => {
+                elements.searchInput.value = '';
+                elements.clearSearch.classList.remove('visible');
+                elements.searchInput.focus();
+            });
+            
+            // Options toggle
+            elements.optionsToggle.addEventListener('click', () => {
+                elements.optionsToggle.classList.toggle('open');
+                elements.optionsPanel.classList.toggle('visible');
+            });
+            
+            // Cancel search
+            elements.cancelSearch.addEventListener('click', cancelSearch);
+            
+            // Export
+            elements.exportJson.addEventListener('click', exportJSON);
+            elements.exportCsv.addEventListener('click', exportCSV);
+            
+            // Clear history
+            elements.clearHistory.addEventListener('click', clearHistory);
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Escape to close search
+                if (e.key === 'Escape') {
+                    if (elements.searchSection.classList.contains('visible')) {
+                        elements.closeSearch.click();
+                    }
+                }
+                
+                // Ctrl+Enter to search
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    if (state.currentTool && !state.searchInProgress) {
+                        runSearch();
+                    }
+                }
+            });
+        }
+
+        // ==================== INIT ====================
+        function init() {
+            updateLanguage(state.lang);
+            initEventListeners();
+            checkAuth();
+        }
+
+        // Start app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
