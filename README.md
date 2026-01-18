@@ -552,8 +552,8 @@ Ce projet utilise les outils open source suivants :
 
 ## 📞 Contact
 
-- **Issues** : [GitHub Issues](https://github.com/VOTRE_USER/osint-toolkit/issues)
-- **Discussions** : [GitHub Discussions](https://github.com/VOTRE_USER/osint-toolkit/discussions)
+- **Issues** : [GitHub Issues](https://github.com/Sufmax/osint-toolkit/issues)
+- **Discussions** : [GitHub Discussions](https://github.com/Sufmax/osint-toolkit/discussions)
 
 ---
 
