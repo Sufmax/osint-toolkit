@@ -1,0 +1,55 @@
+# ==================== Framework Web ====================
+Flask==3.0.0
+Flask-WTF==1.2.1
+Flask-Limiter==3.5.0
+Flask-SocketIO==5.3.6
+
+# ==================== WebSocket ====================
+python-socketio==5.10.0
+python-engineio==4.8.1
+gevent==23.9.1
+gevent-websocket==0.10.1
+
+# ==================== Sécurité ====================
+Werkzeug==3.0.1
+python-dotenv==1.0.0
+
+# 🔴 Hashage sécurisé des mots de passe (ajouté pour remplacer SHA-256)
+bcrypt>=4.0.0
+
+# ==================== OSINT Tools ====================
+# Sherlock - Recherche username
+sherlock-project>=0.14.0
+
+# Holehe - Email to accounts
+holehe>=1.61
+
+# Email validation
+email-validator>=2.0.0
+
+# WHOIS domaine
+python-whois>=0.8.0
+
+# DNS - Version 2.0.0 pour compatibilité maximale
+dnspython==2.0.0
+
+# Phone numbers
+phonenumbers>=8.13.0
+
+# 🟡 ipwhois supprimé - remplacé par ipinfo.io (HTTPS, pas de dépendances conflictuelles)
+# ipwhois==1.2.0  # SUPPRIMÉ
+
+# Wayback Machine
+waybackpy>=3.0.6
+
+# ==================== New Lightweight OSINT Tools ====================
+# EXIF metadata extraction (RAM: ~5 Mo)
+exifread>=3.0.0
+
+# Maigret - Advanced username OSINT (3000+ sites)
+maigret>=0.5.0
+
+# ==================== HTTP Clients ====================
+httpx>=0.25.0
+aiohttp>=3.9.0
+requests>=2.31.0

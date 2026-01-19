@@ -1,11 +1,14 @@
 # 🔍 OSINT Toolkit
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green.svg)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Deploy](https://img.shields.io/badge/Deploy-Render.com-purple.svg)](https://render.com)
+[![Windows](https://img.shields.io/badge/Windows-Compatible-blue.svg)]()
 
 **Plateforme web légère d'outils OSINT (Open Source Intelligence)** conçue pour fonctionner sur des environnements à ressources limitées comme le plan gratuit de Render.com.
+
+> **Version 1.1** — Compatibilité Windows améliorée, corrections Sherlock/Maigret
 
 ![OSINT Toolkit Screenshot](https://via.placeholder.com/800x400/3b82f6/ffffff?text=OSINT+Toolkit)
 
@@ -50,10 +53,13 @@
 - 🚀 **Déploiement simple** sur Render.com (plan gratuit)
 - 🔌 **WebSocket avec fallback** REST automatique
 - 📦 **100% Python** — aucune dépendance système complexe
+- 💻 **Compatible Windows/Linux/macOS** — gestion native des encodages
 
 ---
 
 ## 🛠 Outils disponibles
+
+### Outils principaux
 
 | Outil | Description | Entrée |
 |-------|-------------|--------|
@@ -66,14 +72,41 @@
 | 🖥️ **Lookup IP** | Récupère les informations WHOIS/ASN d'une adresse IP | IP |
 | 📜 **Wayback Machine** | Recherche les archives historiques d'une URL | URL |
 
+### Nouveaux outils légers (v1.1)
+
+|| Outil | Description | Entrée | RAM |
+||-------|-------------|--------|-----|
+|| 🖼️ **EXIF Analyzer** | Extraction métadonnées images (GPS, caméra, date) | Image/URL | ~5 Mo |
+|| 🔍 **Subdomain Finder** | Découverte sous-domaines via CT logs | Domaine | ~2 Mo |
+|| 🔐 **SSL Analyzer** | Analyse certificats SSL/TLS | Hostname | ~2 Mo |
+|| 🔬 **Hash Lookup** | Vérification hashes vs threat intel (MalwareBazaar, VT) | MD5/SHA | ~2 Mo |
+|| 📡 **MAC Lookup** | Identification fabricant via adresse MAC | MAC | ~1 Mo |
+|| 👥 **Social Analyzer** | Recherche profils (Gravatar, GitHub, GitLab) | Email/Username | ~3 Mo |
+|| 🕵️ **Maigret** | Recherche avancée sur 3000+ sites (modes fast/normal/full) | Username | ~50 Mo |
+
+> 💡 **Note** : Maigret propose 3 modes de recherche :
+> - **fast** : Top 50 sites (rapide, ~10s)
+> - **normal** : 500 sites (moyen, ~1min)
+> - **full** : 3000+ sites (complet, ~5min)
+
+> 📖 Voir [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md) pour la documentation complète des nouveaux outils.
+
 ---
 
 ## 📌 Prérequis
 
-- **Python 3.11+**
+- **Python 3.10+** (3.11 recommandé)
 - **pip** (gestionnaire de paquets Python)
 - **Git** (pour le déploiement)
 - Compte [Render.com](https://render.com) (gratuit) pour le déploiement en ligne
+
+### Compatibilité OS
+
+| OS | Status | Notes |
+|----|--------|-------|
+| 💻 **Windows 10/11** | ✅ Compatible | Encodage UTF-8 géré automatiquement |
+| 🐧 **Linux** | ✅ Compatible | Recommandé pour production |
+| 🍎 **macOS** | ✅ Compatible | Intel et Apple Silicon |
 
 ---
 
@@ -289,6 +322,7 @@ osint-toolkit/
 ├── .env.example           # Template variables d'environnement
 ├── .gitignore             # Fichiers ignorés par Git
 ├── README.md              # Documentation
+├── TOOLS_REFERENCE.md     # Référence des nouveaux outils
 ├── LICENSE                # Licence MIT
 │
 ├── templates/
@@ -297,6 +331,15 @@ osint-toolkit/
 ├── static/                # Fichiers statiques (si séparés)
 │   ├── style.css
 │   └── app.js
+│
+├── tools/                 # Nouveaux outils OSINT légers
+│   ├── __init__.py        # Export des modules
+│   ├── exif_analyzer.py   # Extraction métadonnées EXIF
+│   ├── subdomain_finder.py # Découverte sous-domaines
+│   ├── ssl_analyzer.py    # Analyse certificats SSL
+│   ├── hash_lookup.py     # Threat intelligence hashes
+│   ├── mac_lookup.py      # Identification fabricant MAC
+│   └── social_analyzer.py # Profils sociaux
 │
 └── utils/
     ├── __init__.py        # Export des modules
@@ -307,13 +350,13 @@ osint-toolkit/
 
 ### Stack technique
 
-| Couche | Technologie |
-|--------|-------------|
-| **Backend** | Python 3.11, Flask 3.0 |
-| **WebSocket** | Flask-SocketIO, Gevent |
-| **Frontend** | HTML5, CSS3, JavaScript vanilla |
-| **Sécurité** | Flask-WTF, Flask-Limiter |
-| **OSINT** | Sherlock, Holehe, dnspython, phonenumbers, etc. |
+|| Couche | Technologie |
+||--------|-------------|
+|| **Backend** | Python 3.10+, Flask 3.0 |
+|| **WebSocket** | Flask-SocketIO, Gevent |
+|| **Frontend** | HTML5, CSS3, JavaScript vanilla |
+|| **Sécurité** | Flask-WTF, Flask-Limiter |
+|| **OSINT** | Sherlock, Maigret, Holehe, dnspython, phonenumbers, etc. |
 
 ### Flux de données
 
@@ -388,7 +431,7 @@ pip install -r requirements.txt
 2. Effacez les cookies du navigateur
 3. Vérifiez que `APP_PASSWORD` est bien défini
 
-#### ❌ Sherlock/Holehe non trouvé
+#### ❌ Sherlock/Holehe/Maigret non trouvé
 
 ```bash
 FileNotFoundError: sherlock not found
@@ -397,10 +440,27 @@ FileNotFoundError: sherlock not found
 **Solution** : Vérifiez que l'installation est complète
 
 ```bash
-pip install sherlock-project holehe
+pip install sherlock-project holehe maigret
 sherlock --version
 holehe --help
+maigret --version
 ```
+
+#### ❌ Aucun profil trouvé (Sherlock/Maigret)
+
+**Symptôme** : La recherche termine mais affiche "Aucun profil trouvé"
+
+**Solutions** :
+1. Vérifiez que le username existe sur au moins un réseau social
+2. Essayez en mode **full** pour Maigret (plus de sites)
+3. Vérifiez les logs pour des erreurs de connexion
+4. Certains sites peuvent être temporairement inaccessibles
+
+#### ❌ Erreurs d'affichage sur Windows (Maigret)
+
+**Symptôme** : Erreurs liées à `colorama` ou `alive_progress`
+
+**Solution** : Déjà corrigé dans v1.1 avec les options `--no-progressbar --no-color`
 
 ### Logs de débogage
 
@@ -539,14 +599,15 @@ Les auteurs de cet outil **déclinent toute responsabilité** quant à l'utilisa
 
 Ce projet utilise les outils open source suivants :
 
-- [Sherlock](https://github.com/sherlock-project/sherlock) — Recherche de usernames
+- [Sherlock](https://github.com/sherlock-project/sherlock) — Recherche de usernames (400+ sites)
+- [Maigret](https://github.com/soxoj/maigret) — Recherche avancée de usernames (3000+ sites)
 - [Holehe](https://github.com/megadose/holehe) — Email to accounts
 - [email-validator](https://github.com/JoshData/python-email-validator) — Validation d'email
 - [python-whois](https://github.com/richardpenman/whois) — WHOIS lookup
 - [dnspython](https://www.dnspython.org/) — DNS toolkit
 - [phonenumbers](https://github.com/daviddrysdale/python-phonenumbers) — Phone parsing
-- [ipwhois](https://github.com/secynic/ipwhois) — IP WHOIS lookup
 - [waybackpy](https://github.com/akamhy/waybackpy) — Wayback Machine API
+- [ipinfo.io](https://ipinfo.io/) — IP Geolocation API (HTTPS)
 
 ---
 

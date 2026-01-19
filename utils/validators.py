@@ -110,6 +110,42 @@ class InputValidator:
         return url, None
     
     @classmethod
+    def validate_text(cls, text):
+        """Valide une entrée texte générique."""
+        text = cls.sanitize_string(text, 500)
+        if not text:
+            return None, "La valeur est requise"
+        return text, None
+    
+    @classmethod
+    def validate_hash(cls, hash_value):
+        """Valide un hash MD5, SHA1 ou SHA256."""
+        hash_value = cls.sanitize_string(hash_value, 64)
+        if not hash_value:
+            return None, "Le hash est requis"
+        hash_value = hash_value.lower().strip()
+        # Vérifier le format
+        if re.match(r'^[a-f0-9]{32}$', hash_value):  # MD5
+            return hash_value, None
+        if re.match(r'^[a-f0-9]{40}$', hash_value):  # SHA1
+            return hash_value, None
+        if re.match(r'^[a-f0-9]{64}$', hash_value):  # SHA256
+            return hash_value, None
+        return None, "Format de hash invalide (MD5, SHA1 ou SHA256 attendu)"
+    
+    @classmethod
+    def validate_mac(cls, mac):
+        """Valide une adresse MAC."""
+        mac = cls.sanitize_string(mac, 20)
+        if not mac:
+            return None, "L'adresse MAC est requise"
+        # Accepter plusieurs formats
+        mac_clean = re.sub(r'[:\-.]', '', mac.upper())
+        if not re.match(r'^[A-F0-9]{12}$', mac_clean):
+            return None, "Format MAC invalide (ex: AA:BB:CC:DD:EE:FF)"
+        return mac, None
+    
+    @classmethod
     def validate_for_tool(cls, tool, value, **options):
         """
         Valide une entrée selon l'outil sélectionné.
@@ -118,6 +154,7 @@ class InputValidator:
             tuple: (validated_value, error_message)
         """
         validators = {
+            # Outils originaux
             'sherlock': cls.validate_username,
             'holehe': cls.validate_email,
             'email_validator': cls.validate_email,
@@ -125,7 +162,15 @@ class InputValidator:
             'dns': cls.validate_domain,
             'phone': cls.validate_phone,
             'ip': cls.validate_ip,
-            'wayback': cls.validate_url
+            'wayback': cls.validate_url,
+            # Nouveaux outils
+            'exif': cls.validate_text,       # URL ou chemin
+            'subdomains': cls.validate_domain,
+            'ssl': cls.validate_domain,
+            'hash': cls.validate_hash,
+            'mac': cls.validate_mac,
+            'social': cls.validate_text,     # Email ou username
+            'maigret': cls.validate_username
         }
         
         validator = validators.get(tool)
