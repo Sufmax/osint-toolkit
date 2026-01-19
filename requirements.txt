@@ -1,20 +1,18 @@
 # ==================== Framework Web ====================
-Flask==3.0.0
-Flask-WTF==1.2.1
-Flask-Limiter==3.5.0
-Flask-SocketIO==5.3.6
+Flask>=3.1.1
+Flask-WTF>=1.2.1
+Flask-Limiter>=3.5.0
+Flask-SocketIO>=5.3.6
 
 # ==================== WebSocket ====================
-python-socketio==5.10.0
-python-engineio==4.8.1
-gevent==23.9.1
-gevent-websocket==0.10.1
+python-socketio>=5.10.0
+python-engineio>=4.8.1
+gevent>=23.9.1
+gevent-websocket>=0.10.1
 
 # ==================== Sécurité ====================
-Werkzeug==3.0.1
-python-dotenv==1.0.0
-
-# 🔴 Hashage sécurisé des mots de passe (ajouté pour remplacer SHA-256)
+Werkzeug>=3.0.1
+python-dotenv>=1.0.0
 bcrypt>=4.0.0
 
 # ==================== OSINT Tools ====================
@@ -35,9 +33,6 @@ dnspython==2.0.0
 
 # Phone numbers
 phonenumbers>=8.13.0
-
-# 🟡 ipwhois supprimé - remplacé par ipinfo.io (HTTPS, pas de dépendances conflictuelles)
-# ipwhois==1.2.0  # SUPPRIMÉ
 
 # Wayback Machine
 waybackpy>=3.0.6
