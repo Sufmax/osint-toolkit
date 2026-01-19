@@ -74,21 +74,21 @@
 
 ### Nouveaux outils légers (v1.1)
 
-|| Outil | Description | Entrée | RAM |
-||-------|-------------|--------|-----|
-|| 🖼️ **EXIF Analyzer** | Extraction métadonnées images (GPS, caméra, date) | Image/URL | ~5 Mo |
-|| 🔍 **Subdomain Finder** | Découverte sous-domaines via CT logs | Domaine | ~2 Mo |
-|| 🔐 **SSL Analyzer** | Analyse certificats SSL/TLS | Hostname | ~2 Mo |
-|| 🔬 **Hash Lookup** | Vérification hashes vs threat intel (MalwareBazaar, VT) | MD5/SHA | ~2 Mo |
-|| 📡 **MAC Lookup** | Identification fabricant via adresse MAC | MAC | ~1 Mo |
-|| 👥 **Social Analyzer** | Recherche profils (Gravatar, GitHub, GitLab) | Email/Username | ~3 Mo |
-|| 🕵️ **Maigret** | Recherche avancée sur 3000+ sites (modes fast/normal/full) | Username | ~50 Mo |
-
+> | Outil | Description | Entrée | RAM |
+> |-------|-------------|--------|-----|
+> | 🖼️ **EXIF Analyzer** | Extraction métadonnées images (GPS, caméra, date) | Image/URL | ~5 Mo |
+> | 🔍 **Subdomain Finder** | Découverte sous-domaines via CT logs | Domaine | ~2 Mo |
+> | 🔐 **SSL Analyzer** | Analyse certificats SSL/TLS | Hostname | ~2 Mo |
+> | 🔬 **Hash Lookup** | Vérification hashes vs threat intel (MalwareBazaar, VT) | MD5/SHA | ~2 Mo |
+> | 📡 **MAC Lookup** | Identification fabricant via adresse MAC | MAC | ~1 Mo |
+> | 👥 **Social Analyzer** | Recherche profils (Gravatar, GitHub, GitLab) | Email/Username | ~3 Mo |
+> | 🕵️ **Maigret** | Recherche avancée sur 3000+ sites (modes fast/normal/full) | Username | ~50 Mo |
+>
 > 💡 **Note** : Maigret propose 3 modes de recherche :
 > - **fast** : Top 50 sites (rapide, ~10s)
 > - **normal** : 500 sites (moyen, ~1min)
 > - **full** : 3000+ sites (complet, ~5min)
-
+>
 > 📖 Voir [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md) pour la documentation complète des nouveaux outils.
 
 ---
