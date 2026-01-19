@@ -10,7 +10,7 @@
 
 > **Version 1.1** — Compatibilité Windows améliorée, corrections Sherlock/Maigret
 
-![OSINT Toolkit Screenshot](https://via.placeholder.com/800x400/3b82f6/ffffff?text=OSINT+Toolkit)
+![OSINT Toolkit Screenshot](https://github.com/Sufmax/osint-toolkit/blob/main/assets/screenshot.png)
 
 ---
 
@@ -104,9 +104,9 @@
 
 | OS | Status | Notes |
 |----|--------|-------|
-| 💻 **Windows 10/11** | ✅ Compatible | Encodage UTF-8 géré automatiquement |
-| 🐧 **Linux** | ✅ Compatible | Recommandé pour production |
-| 🍎 **macOS** | ✅ Compatible | Intel et Apple Silicon |
+| **Windows 10/11** | ✅ Compatible | Encodage UTF-8 géré automatiquement |
+| **Linux** | ✅ Compatible | Recommandé pour production |
+| **macOS** | ✅ Compatible | Intel et Apple Silicon |
 
 ---
 
